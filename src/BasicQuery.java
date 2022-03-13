@@ -1,8 +1,6 @@
 import java.sql.*;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Scanner;
-import java.util.Set;
+import java.sql.Date;
+import java.util.*;
 
 public class BasicQuery {
     public BasicQuery(Scanner sysIn){
@@ -94,6 +92,9 @@ public class BasicQuery {
             return false;
         }
 
+        uppercaseNames();
+
+
         return true;
     }
     public boolean FR3(){
@@ -129,19 +130,19 @@ public class BasicQuery {
             return false;
         }
 
-        if(checkOut.compareTo(checkIn) <= 0){
+        if(checkOut.compareTo(checkIn) < 0){
             System.out.println("Edit Cancelled. Conflicting Dates");
-            return false;
-        }
-
-        setChildren();
-        if(getNumChildren() < 0){
-            System.out.println("Edit Cancelled");
             return false;
         }
 
         setAdults();
         if(getNumAdults() < 0){
+            System.out.println("Edit Cancelled");
+            return false;
+        }
+
+        setChildren();
+        if(getNumChildren() < 0){
             System.out.println("Edit Cancelled");
             return false;
         }
@@ -158,6 +159,8 @@ public class BasicQuery {
             System.out.println("Edit Cancelled. Too many occupants");
             return false;
         }
+
+        uppercaseNames();
 
         return true;
     }
@@ -199,10 +202,15 @@ public class BasicQuery {
             System.out.println("Search Cancelled. Conflicting Dates");
             return false;
         }
+        uppercaseNames();
 
         return true;
     }
 
+    private void uppercaseNames(){
+        lastName = lastName.toUpperCase(Locale.ROOT);
+        firstName = firstName.toUpperCase(Locale.ROOT);
+    }
 
     // SETTERS
     public void setReservationCODE(){
@@ -274,6 +282,9 @@ public class BasicQuery {
 
             if(ans.equals("q")){
                 return -1;
+            }
+            else if(ans.equals("")){
+                return 0;
             }
 
             try{
@@ -413,14 +424,17 @@ public class BasicQuery {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectMax = "SELECT max(maxOcc) AS mOcc FROM lab_rooms";
+            String selectMax = "SELECT max(maxOcc) AS mOcc FROM lab7_rooms";
 
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(selectMax)) {
 
                 try(ResultSet rs = pstmt.executeQuery()){
-                    return rs.getInt("mOcc");
+
+                    if(rs.next()){
+                        return rs.getInt("mOcc");
+                    }
 
                 }
                 catch (SQLException e){

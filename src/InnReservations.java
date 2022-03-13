@@ -11,55 +11,24 @@ public class InnReservations {
             System.out.println("Inn reservation not created");
         }
     }
-    public InnReservations() throws Exception {
+    public InnReservations(){
 
-        //menu();
-        //printRoomAndRates();  // FR1
-        //createReservation();  // FR2
-        //reservationChange();  // FR3
-        //reservationCancellation(); // FR4
-        //detailedReservationSearch(); //FR5 --- DONE ---
-        //printRevenue();               //FR6
-    }
-
-    private void createC() throws Exception {
-        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
-                System.getenv("HP_JDBC_USER"),
-                System.getenv("HP_JDBC_PW"))) {
-
-            String sql = "SELECT * FROM lab7_rooms";
-
-            // Step 3: (omitted in this example) Start transaction
-
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(sql)){
-
-                while (rs.next()) {
-                    String roomCode = rs.getString("RoomCode");
-                    String roomName = rs.getString("RoomName");
-                    float rate = rs.getFloat("basePrice");
-                    System.out.format("%s %s ($%.2f) %n", roomCode, roomName, rate);
-                }
-
-            }
-
-            /*try(Statement stmt = conn.createStatement()){
-                // Step 4: Send SQL statement to DBMS
-                boolean exRes = stmt.execute(sql);
-                // Step 5: Handle results
-                System.out.format("Result from Select: %b %n", exRes);
-            }*/
-        }
+        menu();
+        //printRoomAndRates();          // FR1 --- DONE ---
+        //createReservation();          // FR2 --- NOT  ---
+        //reservationChange();          // FR3 --- NOT  ---
+        //reservationCancellation();    // FR4 --- DONE ---
+        //detailedReservationSearch();  // FR5 --- DONE ---
+        //printRevenue();               // FR6 --- DONE ---
     }
 
     private void menu(){
-        String ans = "";
         int num = 0;
         menuWords();
 
         while(num != 7){
             num = 0;
-            ans = scannerIn.nextLine();
+            String ans = scannerIn.nextLine();
 
             try{
                 num = Integer.parseInt(ans);
@@ -94,13 +63,14 @@ public class InnReservations {
         printPopularity();
     }
 
-    private int createReservation(){
+    private void createReservation(){
         System.out.println("---------------------------------------------");
         System.out.println("Creating a Reservation");
         System.out.println("---------------------------------------------");
         System.out.println("Enter q to quit at any time");
 
         BasicQuery bQuery = new BasicQuery(scannerIn);
+        bQuery.FR2();
 
         if(bQuery.getRoomCode().equalsIgnoreCase("")){
             System.out.println("Looking for five reservations");
@@ -125,7 +95,6 @@ public class InnReservations {
             }
         }
 
-        return 0;
     }
 
     private void reservationChange(){
@@ -169,7 +138,7 @@ public class InnReservations {
         }
     }
 
-    private int detailedReservationSearch() {
+    private void detailedReservationSearch() {
         System.out.println("---------------------------------------------");
         System.out.println("Reservation Detailed Overview");
         System.out.println("---------------------------------------------");
@@ -181,12 +150,11 @@ public class InnReservations {
         StringBuilder whereString = createWhereStringFR5(bQuery, list);
 
         String totalString = sqlSelect + whereString;
+        System.out.println(totalString);
 
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
-
-
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
@@ -226,7 +194,6 @@ public class InnReservations {
             e.getStackTrace();
         }
 
-        return 0;
     }
 
     private void revenue(){
@@ -294,7 +261,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String insertSql = "INSERT INTO lab7_reservations ('CODE', 'Room','CheckIn','Checkout','Rate','LastName','FirstName','Adults','Kids')\n" +
+            String insertSql = "INSERT INTO lab7_reservations (CODE, Room,CheckIn,Checkout,Rate,LastName,FirstName,Adults,Kids)\n" +
                     "VALUES (?,?,?,?,?,?,?,?,?)";
 
             int nexNum = getMaxInt() + 1;
@@ -364,10 +331,16 @@ public class InnReservations {
                 System.getenv("HP_JDBC_PW"))) {
 
             List<Object> list = new ArrayList<>();
+
             String updateSql = "UPDATE lab7_reservations ";
             StringBuilder setString = createSetStringFR3(bQuery,list);
 
-            String totalString = updateSql + setString + "WHERE 'CODE' = ?";
+            if(list.isEmpty()){
+                System.out.println("No Changes made!");
+                return;
+            }
+
+            String totalString = updateSql + setString + "WHERE CODE = ?";
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
@@ -377,33 +350,14 @@ public class InnReservations {
                     pstmt.setObject(i++, p);
                 }
 
+                int rows  = pstmt.executeUpdate();
 
-                try(ResultSet rs = pstmt.executeQuery()){
-
-                    int CODE_r = rs.getInt("CODE");
-                    String roomCode = rs.getString("Room");
-                    String checkIn = rs.getString("CheckIn");
-                    String checkOut = rs.getString("Checkout");
-                    float rate = rs.getFloat("Rate");
-                    int lastname = rs.getInt("LastName");
-                    int firstname = rs.getInt("FirstName");
-                    int adults = rs.getInt("Adults");
-                    int children= rs.getInt("Kids");
-
-                    System.out.println("Reservation Code: " + CODE_r);
-                    System.out.println("Room Code: " + roomCode);
-                    System.out.println("Check In: " + checkIn);
-                    System.out.println("Check Out: " + checkOut);
-                    System.out.println("Full Name: " + lastname + " " + firstname);
-                    System.out.println("Num Adults: "+ adults);
-                    System.out.println("Num Children: " + children);
-                    System.out.format("Rate: %.2f",rate);
-
-                }
-                catch (SQLException e){
-                    e.getStackTrace();
+                if(rows != 1) {
+                    conn.rollback();
+                    return;
                 }
                 conn.commit();
+                System.out.println("Reservation " + bQuery.getReservationCode() + " Updated!" );
             } catch (SQLException e) {
                 conn.rollback();
             }
@@ -411,6 +365,9 @@ public class InnReservations {
         catch (SQLException e){
             e.getStackTrace();
         }
+
+        printReservation(bQuery.getReservationCode());
+
     }
 
     private boolean deleteReservation(BasicQuery bQuery){
@@ -434,6 +391,7 @@ public class InnReservations {
             } catch (SQLException e) {
                 conn.rollback();
             }
+            conn.commit();
         }
         catch (SQLException e){
             e.getStackTrace();
@@ -457,14 +415,13 @@ public class InnReservations {
                     "    WHERE maxC = CheckOut \n" +
                     "    GROUP BY Room\n" +
                     "),popDay AS (\n" +
-                    "    SELECT SUBDATE( CURRENT_DATE(), INTERVAL 180 DAY) AS Day \n" +
-                    "),\n" +
-                    "popTable AS (\n" +
+                    "    SELECT SUBDATE( CURRENT_DATE(), INTERVAL 180 DAY) AS DayAgo \n" +
+                    "),popTable AS (\n" +
                     "    SELECT Room, IF(CheckIn IS NULL, CURRENT_DATE(), CheckIn) AS ChIn, IF(CheckOut IS NULL, CURRENT_DATE(), CheckOut) AS ChOut\n" +
                     "    FROM lab7_reservations LEFT OUTER JOIN lab7_rooms ON roomCode = Room JOIN  popDay\n" +
-                    "    WHERE CheckIn >= Day\n" +
+                    "    WHERE CheckIn >= DayAgo OR ( DayAgo BETWEEN CheckIn AND CheckOut )\n" +
                     "), donePopTable AS (\n" +
-                    "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), ChIn))/180 as PopScore, IF(SUBDATE(MAX(ChOut), INTERVAL 1 DAY) < CURRENT_Date(), CURRENT_DATE(), SUBDATE(MAX(ChOut), INTERVAL 1 DAY)) AS NextCheckIn FROM popTable\n" +
+                    "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), GREATEST(ChIn,DayAgo)))/180 as PopScore, IF(SUBDATE(MAX(ChOut), INTERVAL 1 DAY) < CURRENT_Date(), CURRENT_DATE(), SUBDATE(MAX(ChOut), INTERVAL 1 DAY)) AS NextCheckIn FROM popTable JOIN popDay\n" +
                     "    GROUP BY Room\n" +
                     "    ORDER BY PopScore DESC\n" +
                     "), doneMaxTable AS(\n" +
@@ -473,9 +430,7 @@ public class InnReservations {
                     "    WHERE maxD = DATEDIFF(Checkout, CheckIn) AND maxC = CheckOut \n" +
                     "    GROUP BY maxDays.Room,maxD, maxC, CheckIn, CheckOut\n" +
                     ")\n" +
-                    "SELECT PopScore, maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, CheckOut,NextCheckIn\n" +
-                    " FROM doneMaxTable JOIN donePopTable ON doneMaxTable.Room = donePopTable.Room JOIN lab7_rooms \n" +
-                    "WHERE RoomCode = doneMaxTable.Room\n" +
+                    "SELECT IF(PopScore IS null,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut ,IF(NextCheckIn is NULL,CURRENT_Date() , NextCheckIn) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN lab7_rooms ON RoomCode = donePopTable.Room\n" +
                     "ORDER BY PopScore DESC";
 
                 conn.setAutoCommit(false);
@@ -507,7 +462,7 @@ public class InnReservations {
                             System.out.format("\nBed Type: %s", bedType);
                             System.out.format("\nBase Price: %.2f", basePrice);
                             System.out.format("\nDecor: %s", decor);
-                            System.out.format("\nDays of Last Stay: %d", maxD);
+                            System.out.format("\nDays occupied of Last Stay: %d", maxD);
                             System.out.format("\nLast CheckOut: %s", checkOut);
                             System.out.format("\nNext CheckIn: %s\n", nextCheckIn);
                             i++;
@@ -529,7 +484,7 @@ public class InnReservations {
             e.getStackTrace();
         }
     }
-    private boolean printReservation(String CODE) {
+    private void printReservation(int CODE) {
 
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
                 System.getenv("HP_JDBC_USER"),
@@ -537,11 +492,10 @@ public class InnReservations {
 
             String selectSql = "SELECT * FROM lab7_reservations WHERE CODE = ?";
 
-            // Step 3: Start transaction
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
-                pstmt.setString(1, CODE);
+                pstmt.setInt(1, CODE);
                 try(ResultSet rs = pstmt.executeQuery()){
 
                     int CODE_r = rs.getInt("CODE");
@@ -565,10 +519,9 @@ public class InnReservations {
 
                 }
                 catch (SQLException e){
-                    return false;
+                    conn.rollback();
                 }
                 conn.commit();
-                return true;
             } catch (SQLException e) {
                 conn.rollback();
             }
@@ -576,9 +529,6 @@ public class InnReservations {
         catch (SQLException e){
             e.getStackTrace();
         }
-
-        return false;
-
     }
     private void printRevenue(){
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
@@ -587,30 +537,54 @@ public class InnReservations {
 
             List<String> roomCodes = new ArrayList<>();
             createRoomCodeList(roomCodes);
+            System.out.println("RoomCode\tJan\t\t\t\tFeb\t\t\t\tMarch\t\t\tApr\t\t\t\tMay\t\t\t\tJun\t\t\t\tJul\t\t\t\tAug\t\t\t\tSept\t\t\tOct\t\t\t\tNov\t\t\t\tDec\t\t\t\tTotal");
 
             for(String roomC: roomCodes) {
                 String sql = "SELECT Room, MONTH(YearDate) as Month, sum(Rate) AS TotalRevenue FROM yearTable JOIN lab7_reservations\n" +
-                        "WHERE DATEDIFF(YearDate, CheckIn) >= 0 AND DATEDIFF(YearDate, CheckOut) < 0 AND Room = " + roomC + " \n" +
+                        "WHERE DATEDIFF(YearDate, CheckIn) >= 0 AND DATEDIFF(YearDate, CheckOut) <= 0 AND Room = ? \n" +
                         "GROUP BY Room, MONTH(YearDate)\n" +
                         "ORDER BY Room, MONTH(YearDate)";
 
                 conn.setAutoCommit(false);
                 try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                    System.out.println("RoomCode\tJan\tFeb\tMarch\tApr\tJun\tJul\tAug\tSept\tOct\tNov\tDec\tTotal");
+                    pstmt.setString(1,roomC);
                     try (ResultSet rs = pstmt.executeQuery()) {
+
+                        int totalMonths = 0;
+                        float yearTotal = 0;
+
+                        System.out.print(roomC);
                         while (rs.next()) {
+                            float totalR = rs.getFloat("TotalRevenue");
+                            int monthNum = rs.getInt("Month");
+                            yearTotal += totalR;
+                            totalMonths++;
 
+                            if(monthNum > totalMonths){
+                                while(monthNum > totalMonths){
+                                    totalMonths++;
+                                    System.out.format("\t\t\t0.00");
+                                }
+                            }
 
+                            System.out.format("\t\t\t%.2f", totalR);
                         }
+                        while(totalMonths < 12){
+                            System.out.format("\t\t\t0.00");
+                            totalMonths++;
+                        }
+                        System.out.format("\t\t\t%.2f",yearTotal);
+                        System.out.println();
                     } catch (SQLException e) {
+                        conn.rollback();
                         e.getStackTrace();
                     }
                 } catch (SQLException e) {
+                    conn.rollback();
                     e.getStackTrace();
                 }
             }
-
-
+            conn.commit();
         }
         catch (SQLException e){
             e.getStackTrace();
@@ -622,7 +596,7 @@ public class InnReservations {
     }
     private StringBuilder createSetStringFR3(BasicQuery bQuery, List<Object> list){
         int countParams = 0;
-        StringBuilder setString = new StringBuilder("");
+        StringBuilder setString = new StringBuilder();
 
         if(!bQuery.getLastName().equalsIgnoreCase("")){
             countParams++;
@@ -631,40 +605,40 @@ public class InnReservations {
         }
         if(!bQuery.getFirstName().equalsIgnoreCase("")){
             if(countParams > 0){
-                setString.append(" AND ");
+                setString.append(" , ");
             }
             setString.append(" FirstName = ? ");
             countParams++;
             list.add(bQuery.getFirstName());
         }
-        if(bQuery.getCheckIn().compareTo(BasicQuery.QUIT_DATE) == 0){
+        if(bQuery.getCheckIn().compareTo(BasicQuery.QUIT_DATE) != 0 && bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0 ){
             if(countParams > 0){
-                setString.append(" AND ");
+                setString.append(" , ");
             }
             setString.append(" CheckIn = ? ");
             countParams++;
             list.add(bQuery.getCheckIn());
         }
-        if(bQuery.getCheckOut().compareTo(BasicQuery.QUIT_DATE) == 0){
+        if(bQuery.getCheckOut().compareTo(BasicQuery.QUIT_DATE) != 0 && bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0){
             if(countParams > 0){
-                setString.append(" AND ");
+                setString.append(" , ");
             }
             setString.append(" CheckOut = ? ");
             countParams++;
             list.add(bQuery.getCheckOut());
         }
-        if(bQuery.getNumAdults() > -1){
+        if(bQuery.getNumAdults() > 0){
             if(countParams > 0){
-                setString.append(" AND ");
+                setString.append(" , ");
             }
             setString.append(" Adults = ? ");
             countParams++;
             list.add(bQuery.getNumAdults());
         }
 
-        if(bQuery.getNumChildren() > -1){
+        if(bQuery.getNumChildren() > 0){
             if(countParams > 0){
-                setString.append(" AND ");
+                setString.append(" , ");
             }
             setString.append(" Kids = ? ");
             countParams++;
@@ -673,6 +647,7 @@ public class InnReservations {
         if(countParams > 0){
             StringBuilder setWord = new StringBuilder(" SET ");
             setWord.append(setString);
+            list.add(bQuery.getReservationCode());
             return setWord;
         }
 
@@ -680,12 +655,12 @@ public class InnReservations {
     }
     private StringBuilder createWhereStringFR5(BasicQuery bQuery, List<Object> list){
         int countParams = 0;
-        StringBuilder whereString = new StringBuilder("");
+        StringBuilder whereString = new StringBuilder();
 
         if(!bQuery.getLastName().equalsIgnoreCase("")){
             countParams++;
 
-            whereString.append("LastName");
+            whereString.append(" LastName ");
             if(bQuery.getLastName().contains("%")){
                 whereString.append(" LIKE ");
             }
@@ -702,7 +677,7 @@ public class InnReservations {
                 whereString.append(" AND ");
             }
 
-            whereString.append("FirstName");
+            whereString.append(" FirstName ");
             if(bQuery.getLastName().contains("%")){
                 whereString.append(" LIKE ");
             }
@@ -720,7 +695,7 @@ public class InnReservations {
                 whereString.append(" AND ");
             }
 
-            whereString.append("CheckIn = ? ");
+            whereString.append(" CheckIn = ? ");
             list.add(bQuery.getCheckIn());
             countParams++;
         }
@@ -729,7 +704,7 @@ public class InnReservations {
             if(countParams > 0){
                 whereString.append(" AND ");
             }
-            whereString.append("CheckOut = ? ");
+            whereString.append(" CheckOut = ? ");
             list.add(bQuery.getCheckOut());
             countParams++;
         }
@@ -739,7 +714,7 @@ public class InnReservations {
                 whereString.append(" AND ");
             }
 
-            whereString.append("RoomCode");
+            whereString.append(" Room ");
             if(bQuery.getRoomCode().contains("%")){
                 whereString.append(" LIKE ");
             }
@@ -757,7 +732,7 @@ public class InnReservations {
                 whereString.append(" AND ");
             }
 
-            whereString.append("CODE = ? ");
+            whereString.append(" CODE = ? ");
             list.add(bQuery.getReservationCode());
             countParams++;
         }
@@ -837,15 +812,31 @@ public class InnReservations {
         return -1;
     }
     private float getTotalRate(Date start, Date end, float baseRate){
-        int days = getNumOfWeeks(start,end);
-        int weeks = days / 7;
-       // String startDay = getDay(start);
-       // String endDay = getDay(end);
+        int totalDays = getNumOfWeeks(start,end);
+        int totalWeeks = totalDays / 7;
 
-        int saturdays = 0;
-        int sundays = 0;
+        String startDay = "Monday";//getDay(start);
+        String endDay = "Monday";//getDay(end);
 
-        return 0.f;
+        if(startDay.equals("Saturday")){
+
+        }
+        else if(startDay.equals("Sunday")){
+
+        }
+        
+
+        if(endDay.equals("Saturday")){
+
+        }
+        else if(endDay.equals("Sunday")){
+
+        }
+
+        int weekdays = 0;
+        int weekends = 0;
+
+        return (float) ((baseRate * weekdays) + ((baseRate*.10) + baseRate)*weekends);
     }
 
     private int getNumOfWeeks(Date start, Date end){
