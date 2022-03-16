@@ -218,6 +218,9 @@ public class BasicQuery {
         System.out.print("Enter Reservation Code: ");
         reservationCode = selectReservationCode();
     }
+    public void setReservationCode(int CODE){
+        reservationCode = CODE;
+    }
     public void setLastName(){
         // Allow to quit the creation of this
         System.out.print("Enter lastname: ");

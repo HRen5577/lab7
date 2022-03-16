@@ -75,26 +75,29 @@ public class InnReservations {
         if(bQuery.getRoomCode().equalsIgnoreCase("")){
             System.out.println("Looking for five reservations");
             BasicQuery bQ = createFiveReservation(bQuery);
+
             if(bQ != null){
-                System.out.println("Reservation is possible");
                 insertReservation(bQ);
                 System.out.println("Reservation Added");
             }
         }
         else{
             boolean isPossible = checkIfPossible(bQuery);
+
             if(isPossible){
               insertReservation(bQuery);
+              System.out.println("Reservation Added");
             }
             else{
                 System.out.println("Looking for five reservations");
                 BasicQuery bQ = createFiveReservation(bQuery);
+
                 if(bQ != null){
                     insertReservation(bQ);
+                    System.out.println("Reservation Added");
                 }
             }
         }
-
     }
 
     private void reservationChange(){
@@ -167,7 +170,7 @@ public class InnReservations {
 
                 try (ResultSet rs = pstmt.executeQuery()) {
                     i = 0;
-                    while (rs.next()) { // PopScore, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, CheckOut,NextCheckIn
+                    while (rs.next()) {
                         int CODE = rs.getInt("CODE");
                         String Room = rs.getString("Room");
                         String checkOut = rs.getString("CheckOut");
@@ -180,8 +183,6 @@ public class InnReservations {
                         System.out.format("\nCheckOut: %s\n", checkOut);
                         i++;
                     }
-
-
                 } catch (SQLException e) {
                     e.getStackTrace();
                 }
@@ -208,37 +209,29 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
+            // CHECK IF SAME BEDTYPE
+            String RoomBedType = getBedType(bQuery.getRoomCode());
+            if(!bQuery.getBedType().equalsIgnoreCase("") && !bQuery.getBedType().equalsIgnoreCase(RoomBedType)){
+                return false;
+            }
 
-            String with = "WITH maxCheckIn AS (\n" +
-                    "    SELECT max(CheckIn) AS maxI FROM lab7_reservations";
-
-            String maxCheckOut = "), maxCheckOut AS (\n" +
-                    "    SELECT max(CheckOut) AS maxO FROM lab7_reservations JOIN maxCheckIn \n" +
-                    "    WHERE maxI = CheckIn";
-            String selectMaxSql = ")\n" +
-                    "SELECT CheckIn, CheckOut FROM maxCheckIn JOIN maxCheckOut JOIN lab7_reservations\n" +
-                    "WHERE CheckIn = maxI AND Checkout = maxO";
-
-
-            with += " WHERE Room = ? ";
-            maxCheckOut += " AND Room = ? ";
-            selectMaxSql += " AND Room = ? ";
-
-            String totalSql = with + maxCheckOut + selectMaxSql;
-
-            // Step 3: Start transaction
+            // CHECK IF DAYS OVERLAP
             conn.setAutoCommit(false);
 
-            try (PreparedStatement pstmt = conn.prepareStatement(totalSql)) {
+            String select = "SELECT Room, max(CheckOut) AS MostRecentCheckOut FROM lab7_reservations\n" +
+                    "WHERE Room = ?\n" +
+                    "GROUP BY Room";
+
+            try (PreparedStatement pstmt = conn.prepareStatement(select)) {
                 pstmt.setString(1, bQuery.getRoomCode());
-                pstmt.setString(2,bQuery.getRoomCode());
-                pstmt.setString(3,bQuery.getRoomCode());
 
                 try(ResultSet rs = pstmt.executeQuery()){
                    if(rs.next()){
-                        Date checkIn = rs.getDate("CheckIn");
-                        Date checkOut = rs.getDate("CheckOut");
-                        System.out.println(checkIn+ " " +checkOut);
+                        Date recentCheckOut = rs.getDate("MostRecentCheckOut");
+
+                        if(bQuery.getCheckIn().compareTo(recentCheckOut) <= 0){
+                            return true;
+                        }
                    }
                 }
                 catch (SQLException e){
@@ -279,40 +272,25 @@ public class InnReservations {
                 pstmt.setString(2, bQuery.getRoomCode());
                 pstmt.setDate(3, bQuery.getCheckIn());
                 pstmt.setDate(4, bQuery.getCheckOut());
-                pstmt.setFloat(5,roomRate); // find rate with rooms
+                pstmt.setFloat(5,roomRate);
                 pstmt.setString(6, bQuery.getLastName());
                 pstmt.setString(7, bQuery.getFirstName());
                 pstmt.setInt(8, bQuery.getNumAdults());
                 pstmt.setInt(9, bQuery.getNumChildren());
 
-                try(ResultSet rs = pstmt.executeQuery()){
+                pstmt.executeUpdate();
 
-                    int CODE_r = rs.getInt("CODE");
-                    String roomCode = rs.getString("Room");
-                    String checkIn = rs.getString("CheckIn");
-                    String checkOut = rs.getString("Checkout");
-                    float rate = rs.getFloat("Rate");
-                    int lastname = rs.getInt("LastName");
-                    int firstname = rs.getInt("FirstName");
-                    int adults = rs.getInt("Adults");
-                    int children= rs.getInt("Kids");
+                float totalRate = getTotalRate(bQuery.getCheckIn(),bQuery.getCheckOut(), roomRate);
 
-                    //float totalRate = getTotalRate(checkIn,checkOut, rate);
-
-                    System.out.println("Reservation Code: " + CODE_r);
-                    System.out.println("Room Code: " + roomCode);
-                    System.out.println("Check In: " + checkIn);
-                    System.out.println("Check Out: " + checkOut);
-                    System.out.println("Full Name: " + lastname + " " + firstname);
-                    System.out.println("Num Adults: "+ adults);
-                    System.out.println("Num Children: " + children);
-                    System.out.format("Rate: %.2f",rate);
-                    System.out.println("Total Rate: "); // need to figure out the rate;
-
-                }
-                catch (SQLException e){
-                    e.getStackTrace();
-                }
+                System.out.println("Reservation Code: " + nexNum);
+                System.out.println("Room Code: " + bQuery.getRoomCode());
+                System.out.println("Check In: " + bQuery.getCheckIn());
+                System.out.println("Check Out: " + bQuery.getCheckOut());
+                System.out.println("Full Name: " + bQuery.getLastName() + " " + bQuery.getFirstName());
+                System.out.println("Num Adults: "+ bQuery.getNumAdults());
+                System.out.println("Num Children: " + bQuery.getNumChildren());
+                System.out.format("Rate: %.2f",roomRate);
+                System.out.format("\nTotal Rate: %.2f\n ", totalRate);
                 conn.commit();
             } catch (SQLException e) {
                 conn.rollback();
@@ -321,8 +299,6 @@ public class InnReservations {
         catch (SQLException e){
             e.getStackTrace();
         }
-
-
     }
 
     private void updateReservation(BasicQuery bQuery){
@@ -369,7 +345,6 @@ public class InnReservations {
         printReservation(bQuery.getReservationCode());
 
     }
-
     private boolean deleteReservation(BasicQuery bQuery){
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
                 System.getenv("HP_JDBC_USER"),
@@ -398,7 +373,6 @@ public class InnReservations {
         }
         return false;
     }
-
 
     // PRINTS
     private void printPopularity(){
@@ -466,7 +440,6 @@ public class InnReservations {
                             System.out.format("\nLast CheckOut: %s", checkOut);
                             System.out.format("\nNext CheckIn: %s\n", nextCheckIn);
                             i++;
-
                         }
                         conn.commit();
                     }
@@ -751,14 +724,16 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectMax = "SELECT max(CODE) FROM lab7_reservations";
+            String selectMax = "SELECT max(CODE) AS mCode FROM lab7_reservations";
 
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(selectMax)) {
 
                 try(ResultSet rs = pstmt.executeQuery()){
-                    return rs.getInt("CODE");
+                    if(rs.next()){
+                        return rs.getInt("mCode");
+                    }
 
                 }
                 catch (SQLException e){
@@ -783,7 +758,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectRate = "SELECT rate FROM lab7_rooms WHERE Room = ?";
+            String selectRate = "SELECT * FROM lab7_rooms WHERE RoomCode = ?";
 
             conn.setAutoCommit(false);
 
@@ -791,8 +766,9 @@ public class InnReservations {
                 pstmt.setString(1,roomCode);
 
                 try(ResultSet rs = pstmt.executeQuery()){
-                    return rs.getFloat("Rate");
-
+                    if(rs.next()){
+                        return rs.getFloat("basePrice");
+                    }
                 }
                 catch (SQLException e){
                     e.getStackTrace();
@@ -812,34 +788,104 @@ public class InnReservations {
         return -1;
     }
     private float getTotalRate(Date start, Date end, float baseRate){
-        int totalDays = getNumOfWeeks(start,end);
+        int totalDays = getTotalDays(start,end);
         int totalWeeks = totalDays / 7;
 
-        String startDay = "Monday";//getDay(start);
-        String endDay = "Monday";//getDay(end);
+        int weekdays = totalDays;
+        int weekends = totalWeeks*2;
+
+        String startDay = getDay(start);
+        String endDay = getDay(end);
 
         if(startDay.equals("Saturday")){
-
+            weekends += 2;
         }
         else if(startDay.equals("Sunday")){
-
+            weekends += 1;
         }
-        
 
         if(endDay.equals("Saturday")){
-
+            weekends += 1;
         }
         else if(endDay.equals("Sunday")){
-
+            weekends += 2;
         }
 
-        int weekdays = 0;
-        int weekends = 0;
+        weekends = weekends + (totalWeeks*2);
+        weekdays = weekdays - (weekends);
 
+        System.out.println(weekends);
+        System.out.println(weekdays);
+        System.out.println(totalDays);
         return (float) ((baseRate * weekdays) + ((baseRate*.10) + baseRate)*weekends);
     }
 
-    private int getNumOfWeeks(Date start, Date end){
+    private String getDay(Date start) {
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                System.getenv("HP_JDBC_USER"),
+                System.getenv("HP_JDBC_PW"))) {
+
+            String selectDate = "SELECT DAYNAME(?) AS day";
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(selectDate)) {
+                pstmt.setDate(1, start);
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if(rs.next()){
+                        return rs.getString("day");
+                    }
+                }
+                catch (SQLException e){
+                    e.getStackTrace();
+                    conn.rollback();
+                }
+
+                } catch (SQLException e) {
+                e.getStackTrace();
+                conn.rollback();
+            }
+        }catch (SQLException e ){
+            e.getStackTrace();
+        }
+
+        return "";
+
+    }
+    private String getBedType(String RoomCode){
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                System.getenv("HP_JDBC_USER"),
+                System.getenv("HP_JDBC_PW"))) {
+
+            String selectDate = "SELECT * FROM lab7_reservations WHERE Room = ? ";
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(selectDate)) {
+                pstmt.setString(1, RoomCode);
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if(rs.next()){
+                        return rs.getString("bedType");
+                    }
+                }
+                catch (SQLException e){
+                    e.getStackTrace();
+                    conn.rollback();
+                }
+
+            } catch (SQLException e) {
+                e.getStackTrace();
+                conn.rollback();
+            }
+        }catch (SQLException e ){
+            e.getStackTrace();
+        }
+
+        return "";
+
+    }
+
+    private int getTotalDays(Date start, Date end){
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
@@ -853,7 +899,9 @@ public class InnReservations {
                 pstmt.setDate(2,start);
 
                 try(ResultSet rs = pstmt.executeQuery()){
-                    return rs.getInt("DateDiff");
+                    if(rs.next()){
+                        return rs.getInt("DateDiff");
+                    }
                 }
                 catch (SQLException e){
                     e.getStackTrace();
@@ -898,8 +946,6 @@ public class InnReservations {
             catch (SQLException e){
                 e.getStackTrace();
             }
-
-
         }
         catch (SQLException e){
             e.getStackTrace();
