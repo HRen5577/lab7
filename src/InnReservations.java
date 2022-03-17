@@ -320,7 +320,6 @@ public class InnReservations {
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
-
                 int i = 1;
                 for (Object p : list) {
                     pstmt.setObject(i++, p);
@@ -584,7 +583,7 @@ public class InnReservations {
             countParams++;
             list.add(bQuery.getFirstName());
         }
-        if(bQuery.getCheckIn().compareTo(BasicQuery.QUIT_DATE) != 0 && bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0 ){
+        if(bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0 ){
             if(countParams > 0){
                 setString.append(" , ");
             }
@@ -592,11 +591,11 @@ public class InnReservations {
             countParams++;
             list.add(bQuery.getCheckIn());
         }
-        if(bQuery.getCheckOut().compareTo(BasicQuery.QUIT_DATE) != 0 && bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0){
+        if(bQuery.getCheckOut().compareTo(BasicQuery.EMPTY_DATE) != 0){
             if(countParams > 0){
                 setString.append(" , ");
             }
-            setString.append(" CheckOut = ? ");
+            setString.append(" Checkout = ? ");
             countParams++;
             list.add(bQuery.getCheckOut());
         }
