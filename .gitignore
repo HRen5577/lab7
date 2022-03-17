@@ -1,0 +1,4 @@
+# Default ignored files
+src/auth.jdbc
+*.class
+src/mysql-connector-java-8.0.16.jar
