@@ -591,6 +591,7 @@ public class InnReservations {
             countParams++;
             list.add(bQuery.getCheckIn());
         }
+
         if(bQuery.getCheckOut().compareTo(BasicQuery.EMPTY_DATE) != 0){
             if(countParams > 0){
                 setString.append(" , ");
