@@ -79,6 +79,8 @@ public class InnReservations {
             if(bQ != null){
                 insertReservation(bQ);
                 System.out.println("Reservation Added");
+            } else {
+                return;
             }
         }
         else{
@@ -618,9 +620,11 @@ public class InnReservations {
                         count++;
                     }
                     System.out.println("---------------------------------------------");
-                    System.out.print("Room selection: ");
+                    System.out.print("Room selection (enter 0 to cancel): ");
                     Integer selection = Integer.parseInt(scannerIn.nextLine());
-
+                    if(selection == 0){
+                        return null;
+                    }
                     rs.absolute(selection);
                     bQuery.newRoomCode(rs.getString(1));
                 } catch (SQLException e) {
