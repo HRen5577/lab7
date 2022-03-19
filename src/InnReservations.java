@@ -78,7 +78,8 @@ public class InnReservations {
 
             if(bQ != null){
                 insertReservation(bQ);
-                System.out.println("Reservation Added");
+            } else {
+                return;
             }
         }
         else{
@@ -86,7 +87,6 @@ public class InnReservations {
 
             if(isPossible){
               insertReservation(bQuery);
-              System.out.println("Reservation Added");
             }
             else{
                 System.out.println("Looking for five reservations");
@@ -94,7 +94,6 @@ public class InnReservations {
 
                 if(bQ != null){
                     insertReservation(bQ);
-                    System.out.println("Reservation Added");
                 }
             }
         }
@@ -291,6 +290,13 @@ public class InnReservations {
                 System.out.println("Num Children: " + bQuery.getNumChildren());
                 System.out.format("Rate: %.2f",roomRate);
                 System.out.format("\nTotal Rate: %.2f\n ", totalRate);
+                System.out.println("---------------------------------------------");
+                System.out.println("0 - Confirm   or   1 - Cancel");
+                Integer req = Integer.parseInt(scannerIn.nextLine());
+                if (req == 1) {
+                    System.out.println("Reservation cancelled");
+                    return;
+                }
                 conn.commit();
             } catch (SQLException e) {
                 System.out.println("error in prepare update");
@@ -301,6 +307,7 @@ public class InnReservations {
             System.out.println("error in update connection");
             e.getStackTrace();
         }
+        System.out.println("Reservation Added");
     }
 
     private void updateReservation(BasicQuery bQuery){
@@ -573,6 +580,9 @@ public class InnReservations {
         StringBuilder where = new StringBuilder();
         Integer totalOcc = bQuery.getNumAdults() + bQuery.getNumChildren();
         where.append("where maxOcc >= " + totalOcc);
+        if(!bQuery.getBedType().equalsIgnoreCase("")) {
+            where.append(" and BedType = '" + bQuery.getBedType() + "'");
+        }
 
         return where;
     }
@@ -581,7 +591,7 @@ public class InnReservations {
     private BasicQuery createFiveReservation(BasicQuery bQuery){
         Integer count = 1;
         System.out.println("---------------------------------------------");
-        System.out.println("Select option one(1) to five(5)");
+        System.out.println("Select preferences from 1 to -");
         System.out.println("---------------------------------------------");
 
         StringBuilder sqlWhere = createWhereStringFR2(bQuery);
@@ -615,9 +625,11 @@ public class InnReservations {
                         count++;
                     }
                     System.out.println("---------------------------------------------");
-                    System.out.print("Room selection: ");
+                    System.out.print("Room selection (enter 0 to cancel): ");
                     Integer selection = Integer.parseInt(scannerIn.nextLine());
-
+                    if(selection == 0){
+                        return null;
+                    }
                     rs.absolute(selection);
                     bQuery.newRoomCode(rs.getString(1));
                 } catch (SQLException e) {
