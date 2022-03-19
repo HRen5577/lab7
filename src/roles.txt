@@ -13,4 +13,7 @@ Ryan Tsai
     - minor BasicQuery adjustments
     - Bug hunter
 
-Skyler Dee
+Skyler Han
+    - FR3
+    - FR5
+    - Attempted to debug 3

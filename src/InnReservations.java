@@ -405,6 +405,7 @@ public class InnReservations {
                         String Room = rs.getString("Room");
                         Date checkOut = rs.getDate("CheckOut");
                         Date checkIn = rs.getDate("CheckIn");
+                        System.out.println(Room + checkOut + checkIn);
 
                         return checkSelect(bQuery, Room, checkOut, checkIn);
 
@@ -446,21 +447,29 @@ public class InnReservations {
                 System.getenv("HP_JDBC_PW"))) {
             conn.setAutoCommit(false);
 
-            String totalString = "SELECT * FROM hrendon.lab7_reservations" +
-                        "WHERE DATEDIFF(?,CheckIn) >= 0 AND DATEDIFF(?, Checkout) < 0 AND Room = ?"+
-                    "AND CODE != ?";
+            String totalString = "select * from hrendon.lab7_rooms rm1 \n" +
+                            "join hrendon.lab7_rooms rm2 on ? <> rm1.code and ? = rm2.room \n" +
+                            "where ? <= rm2.checkin and rm1 and ? > ?";
 
             try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
-                pstmt.setDate(1,cI);
-                pstmt.setDate(2,cO);
-                pstmt.setString(3,Room);
-                pstmt.setInt(4,bQuery.getReservationCode());
+                pstmt.setInt(1,bQuery.getReservationCode());
+                pstmt.setString(2,Room);
+                pstmt.setDate(3,cO);
+                pstmt.setDate(4,cO);
+                pstmt.setDate(5,cI);
+                
+                
+                try (ResultSet rs = pstmt.executeQuery()){
+                    System.out.println(rs);
+                    if (rs.next()) {
+                        return false;
+                    }
+                    return true;
+                } catch (SQLException e) {
+                    e.getStackTrace();
+                }
 
-                boolean rs = pstmt.execute();
 
-                conn.commit();
-
-                return !rs;
             } catch (SQLException e) {
                 e.getStackTrace();
             }
