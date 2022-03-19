@@ -14,12 +14,12 @@ public class InnReservations {
     public InnReservations(){
 
         menu();
-        //printRoomAndRates();          // FR1 --- DONE ---
-        //createReservation();          // FR2 --- NOT  ---
-        //reservationChange();          // FR3 --- NOT  ---
-        //reservationCancellation();    // FR4 --- DONE ---
-        //detailedReservationSearch();  // FR5 --- DONE ---
-        //printRevenue();               // FR6 --- DONE ---
+        //printRoomAndRates();        
+        //createReservation();          
+        //reservationChange();          
+        //reservationCancellation();    
+        //detailedReservationSearch();  
+        //printRevenue();              
     }
 
     private void menu(){
