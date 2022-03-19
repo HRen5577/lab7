@@ -21,4 +21,5 @@ B)
 C) Known Bugs/Deficiencies
     FR1) NextCheckIn gives the max checkout and does not account for gaps in reservations
     FR2) TotalRate: Doesn't give the correct Rate for incomplete weeks
+    FR2) Doesn't check for gaps betweens reservations. Assumes that they are sequential
 
