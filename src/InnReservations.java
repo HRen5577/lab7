@@ -73,7 +73,7 @@ public class InnReservations {
         bQuery.FR2();
 
         if(bQuery.getRoomCode().equalsIgnoreCase("")){
-            System.out.println("Looking for five reservations");
+            System.out.println("Looking for five reservations...");
             BasicQuery bQ = createFiveReservation(bQuery);
 
             if(bQ != null){
@@ -293,10 +293,12 @@ public class InnReservations {
                 System.out.format("\nTotal Rate: %.2f\n ", totalRate);
                 conn.commit();
             } catch (SQLException e) {
+                System.out.println("error in prepare update");
                 conn.rollback();
             }
         }
         catch (SQLException e){
+            System.out.println("error in update connection");
             e.getStackTrace();
         }
     }
@@ -562,9 +564,72 @@ public class InnReservations {
             e.getStackTrace();
         }
     }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private StringBuilder createWhereStringFR2(BasicQuery bQuery){
+        StringBuilder where = new StringBuilder();
+        Integer totalOcc = bQuery.getNumAdults() + bQuery.getNumChildren();
+        where.append("where maxOcc >= " + totalOcc);
+
+        return where;
+    }
+
 
     private BasicQuery createFiveReservation(BasicQuery bQuery){
-        return null;
+        Integer count = 1;
+        System.out.println("---------------------------------------------");
+        System.out.println("Select option one(1) to five(5)");
+        System.out.println("---------------------------------------------");
+
+        StringBuilder sqlWhere = createWhereStringFR2(bQuery);
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("With Oset as (select distinct Room, if(CheckIn <= '");
+        sql.append(bQuery.getCheckOut());
+        sql.append("' and CheckOut > '");
+        sql.append(bQuery.getCheckIn());
+        sql.append("', 'Occupied', 'Empty') as occupied from lab7_reservations as rv) ");
+        sql.append("select rv.Room, rm.RoomName, rm.Beds, rm.maxOcc, rm.basePrice, rm.decor " +
+                    "from lab7_reservations as rv " + 
+                    "join lab7_rooms as rm on rm.RoomCode = rv.Room " +
+                    "join Oset as o on o.Room = rv.Room ");
+        sql.append(sqlWhere);
+        sql.append(" group by rv.Room having max(Occupied) = 'Empty' order by rv.Room limit 5;");
+
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                System.getenv("HP_JDBC_USER"),
+                System.getenv("HP_JDBC_PW"))) {
+                conn.setAutoCommit(false);
+            try (PreparedStatement s = conn.prepareStatement(sql.toString())) {
+                try (ResultSet rs = s.executeQuery()) {
+                    System.out.println("Code, Room name, bed type, number of beds, price, style \n");
+                    while (rs.next()) {
+                        String row = "";
+                        for (int i = 1; i <= 6; i++) {
+                            row += rs.getString(i) + ", ";          
+                        }
+                        System.out.println(count + ". " + row + "\n");
+                        count++;
+                    }
+                    System.out.println("---------------------------------------------");
+                    System.out.print("Room selection: ");
+                    Integer selection = Integer.parseInt(scannerIn.nextLine());
+
+                    rs.absolute(selection);
+                    bQuery.newRoomCode(rs.getString(1));
+                } catch (SQLException e) {
+                    System.out.println("error in rs execute");
+                    e.getStackTrace();
+                }
+            } catch (SQLException e) {
+                System.out.println("error in s prepare");
+            }
+        } catch (SQLException e) {
+            System.out.println("error in get five rooms");
+            e.getStackTrace();
+        }
+
+        
+        return bQuery;
     }
     private StringBuilder createSetStringFR3(BasicQuery bQuery, List<Object> list){
         int countParams = 0;

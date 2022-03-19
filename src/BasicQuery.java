@@ -234,6 +234,9 @@ public class BasicQuery {
         System.out.print("Enter a RoomCode (Leave empty or type 'Any' for any room): ");
         roomCode = selectRoomCode();
     }
+    public void newRoomCode(String code){
+        roomCode = code;
+    }
     public void setBedType(){
         System.out.print("Enter Bed Type (Leave empty or type 'Any' for any bed): ");
         bedType = selectBedType();
