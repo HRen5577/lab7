@@ -324,6 +324,8 @@ public class InnReservations {
                 return;
             }
 
+
+
             String totalString = updateSql + setString + "WHERE CODE = ?";
             conn.setAutoCommit(false);
 
@@ -379,6 +381,41 @@ public class InnReservations {
             e.getStackTrace();
         }
         return false;
+    }
+
+    private boolean roomDateConflict(String code, String newCheckIn, String newCheckOut){
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                    System.getenv("HP_JDBC_USER"),
+                    System.getenv("HP_JDBC_PW"))) {
+            String sql = String.format("WITH target AS(\n" +
+                        " SELECT * FROM hrendon.lab7_reservations \n" +
+                        " WHERE Code = %s\n" +
+                        ")\n" +
+                        " SELECT * FROM hrendon.lab7_reservations h1 \n" +
+                        " WHERE DATEDIFF('%s', target.CheckIn) >= 0 AND \n" +
+                        " DATEDIFF('%s', target.CheckOut) < 0 AND \n" +
+                        " h1.Room = target.Room AND h1.Code != target.Code", code, newCheckIn, newCheckOut);
+                        conn.setAutoCommit(false);
+                        try(PreparedStatement pstmt = conn.prepareStatement(sql)){
+
+                            try(ResultSet rs = pstmt.executeQuery()) {
+                                conn.commit();
+                                return true;
+                            }
+                            catch (SQLException e){
+                                conn.rollback();
+                                e.getStackTrace();
+                            }
+                        }
+                        catch (SQLException e){
+                            conn.rollback();
+                            e.getStackTrace();
+                        }
+        }
+        catch (SQLException e){
+            e.getStackTrace();
+        }
+
     }
 
     // PRINTS

@@ -130,7 +130,7 @@ public class BasicQuery {
             return false;
         }
 
-        if(checkOut.compareTo(checkIn) < 0){
+        if(checkOut.compareTo(checkIn) <= 0){
             System.out.println("Edit Cancelled. Conflicting Dates");
             return false;
         }
