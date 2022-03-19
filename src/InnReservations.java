@@ -152,7 +152,6 @@ public class InnReservations {
         StringBuilder whereString = createWhereStringFR5(bQuery, list);
 
         String totalString = sqlSelect + whereString;
-        System.out.println(totalString);
 
         try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
                 System.getenv("HP_JDBC_USER"),
