@@ -430,7 +430,7 @@ public class BasicQuery {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectMax = "SELECT max(maxOcc) AS mOcc FROM lab7_rooms";
+            String selectMax = "SELECT max(maxOcc) AS mOcc FROM hrendon.lab7_rooms";
 
             conn.setAutoCommit(false);
 

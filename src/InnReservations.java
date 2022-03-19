@@ -147,7 +147,7 @@ public class InnReservations {
 
         BasicQuery bQuery = new BasicQuery(scannerIn);
         bQuery.FR5();
-        String sqlSelect = "SELECT * FROM lab7_reservations";
+        String sqlSelect = "SELECT * FROM hrendon.lab7_reservations";
         List<Object> list = new ArrayList<>();
         StringBuilder whereString = createWhereStringFR5(bQuery, list);
 
@@ -216,7 +216,7 @@ public class InnReservations {
             // CHECK IF DAYS OVERLAP
             conn.setAutoCommit(false);
 
-            String select = "SELECT Room, max(CheckOut) AS MostRecentCheckOut FROM lab7_reservations\n" +
+            String select = "SELECT Room, max(CheckOut) AS MostRecentCheckOut FROM hrendon.lab7_reservations\n" +
                     "WHERE Room = ?\n" +
                     "GROUP BY Room";
 
@@ -252,7 +252,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String insertSql = "INSERT INTO lab7_reservations (CODE, Room,CheckIn,Checkout,Rate,LastName,FirstName,Adults,Kids)\n" +
+            String insertSql = "INSERT INTO hrendon.lab7_reservations (CODE, Room,CheckIn,Checkout,Rate,LastName,FirstName,Adults,Kids)\n" +
                     "VALUES (?,?,?,?,?,?,?,?,?)";
 
             int nexNum = getMaxInt() + 1;
@@ -316,7 +316,7 @@ public class InnReservations {
 
             List<Object> list = new ArrayList<>();
 
-            String updateSql = "UPDATE lab7_reservations ";
+            String updateSql = "UPDATE hrendon.lab7_reservations ";
             StringBuilder setString = createSetStringFR3(bQuery,list);
 
             if(list.isEmpty()){
@@ -357,7 +357,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String deleteSql = "DELETE FROM lab7_reservations WHERE CODE = ?";
+            String deleteSql = "DELETE FROM hrendon.lab7_reservations WHERE CODE = ?";
 
             conn.setAutoCommit(false);
 
@@ -388,18 +388,18 @@ public class InnReservations {
                 System.getenv("HP_JDBC_PW"))) {
 
             String sql = "WITH maxCheckOut AS(\n" +
-                    "    SELECT Room, max(checkout) as maxC FROM lab7_reservations \n" +
+                    "    SELECT Room, max(checkout) as maxC FROM hrendon.lab7_reservations \n" +
                     "    WHERE checkOut <=  CURRENT_DATE()\n" +
                     "    GROUP BY Room\n" +
                     "), maxDays AS (\n" +
-                    "    SELECT maxCheckOut.Room, MAX(DATEDIFF(Checkout, CheckIn)) AS maxD FROM lab7_reservations JOIN maxCheckOut ON maxCheckOut.Room = lab7_reservations.Room\n" +
+                    "    SELECT maxCheckOut.Room, MAX(DATEDIFF(Checkout, CheckIn)) AS maxD FROM hrendon.lab7_reservations JOIN maxCheckOut ON maxCheckOut.Room = hrendon.lab7_reservations.Room\n" +
                     "    WHERE maxC = CheckOut \n" +
                     "    GROUP BY Room\n" +
                     "),popDay AS (\n" +
                     "    SELECT SUBDATE( CURRENT_DATE(), INTERVAL 180 DAY) AS DayAgo \n" +
                     "),popTable AS (\n" +
                     "    SELECT Room, IF(CheckIn IS NULL, CURRENT_DATE(), CheckIn) AS ChIn, IF(CheckOut IS NULL, CURRENT_DATE(), CheckOut) AS ChOut\n" +
-                    "    FROM lab7_reservations LEFT OUTER JOIN lab7_rooms ON roomCode = Room JOIN  popDay\n" +
+                    "    FROM hrendon.lab7_reservations LEFT OUTER JOIN lab7_rooms ON roomCode = Room JOIN  popDay\n" +
                     "    WHERE (CheckIn >= DayAgo AND Checkout < CURRENT_DATE()) OR ( DayAgo BETWEEN CheckIn AND CheckOut )\n" +
                     "), donePopTable AS (\n" +
                     "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), GREATEST(ChIn,DayAgo)))/180 as PopScore FROM popTable JOIN popDay\n" +
@@ -407,11 +407,11 @@ public class InnReservations {
                     "    ORDER BY PopScore DESC\n" +
                     "), doneMaxTable AS(\n" +
                     "    SELECT maxDays.Room, maxD, maxC, CheckIn, CheckOut FROM maxDays JOIN maxCheckOut ON maxDays.Room = maxCheckOut.Room \n" +
-                    "    JOIN lab7_reservations ON maxDays.Room = lab7_reservations.Room \n" +
+                    "    JOIN hrendon.lab7_reservations ON maxDays.Room = hrendon.lab7_reservations.Room \n" +
                     "    WHERE maxD = DATEDIFF(Checkout, CheckIn) AND maxC = CheckOut \n" +
                     "    GROUP BY maxDays.Room,maxD, maxC, CheckIn, CheckOut\n" +
                     "), TotalMaxCheckOut AS (\n" +
-                    "    SELECT RoomCode AS RC, MAX(Checkout) AS TMaxCheckout FROM lab7_rooms LEFT OUTER JOIN lab7_reservations ON Room = RoomCode\n" +
+                    "    SELECT RoomCode AS RC, MAX(Checkout) AS TMaxCheckout FROM lab7_rooms LEFT OUTER JOIN hrendon.lab7_reservations ON Room = RoomCode\n" +
                     "    GROUP BY RoomCode\n" +
                     ")\n" +
                     "SELECT IF(PopScore IS null OR PopScore < 0,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut, IF(DATEDIFF(TMaxCheckout, CURRENT_DATE) <= 0 OR TMaxCheckout IS null,CURRENT_DATE,TMaxCheckout) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN lab7_rooms ON RoomCode = donePopTable.Room\n" +
@@ -474,7 +474,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectSql = "SELECT * FROM lab7_reservations WHERE CODE = ?";
+            String selectSql = "SELECT * FROM hrendon.lab7_reservations WHERE CODE = ?";
 
             conn.setAutoCommit(false);
 
@@ -524,7 +524,7 @@ public class InnReservations {
             System.out.println("RoomCode\tJan\t\t\t\tFeb\t\t\t\tMarch\t\t\tApr\t\t\t\tMay\t\t\t\tJun\t\t\t\tJul\t\t\t\tAug\t\t\t\tSept\t\t\tOct\t\t\t\tNov\t\t\t\tDec\t\t\t\tTotal");
 
             for(String roomC: roomCodes) {
-                String sql = "SELECT Room, MONTH(YearDate) as Month, sum(Rate) AS TotalRevenue FROM yearTable JOIN lab7_reservations\n" +
+                String sql = "SELECT Room, MONTH(YearDate) as Month, sum(Rate) AS TotalRevenue FROM hrendon.yearTable JOIN hrendon.lab7_reservations\n" +
                         "WHERE DATEDIFF(YearDate, CheckIn) >= 0 AND DATEDIFF(YearDate, CheckOut) < 0 AND Room = ? \n" +
                         "GROUP BY Room, MONTH(YearDate)\n" +
                         "ORDER BY Room, MONTH(YearDate)";
@@ -600,9 +600,9 @@ public class InnReservations {
         sql.append(bQuery.getCheckOut());
         sql.append("' and CheckOut > '");
         sql.append(bQuery.getCheckIn());
-        sql.append("', 'Occupied', 'Empty') as occupied from lab7_reservations as rv) ");
+        sql.append("', 'Occupied', 'Empty') as occupied from hrendon.lab7_reservations as rv) ");
         sql.append("select rv.Room, rm.RoomName, rm.Beds, rm.maxOcc, rm.basePrice, rm.decor " +
-                    "from lab7_reservations as rv " + 
+                    "from hrendon.lab7_reservations as rv " + 
                     "join lab7_rooms as rm on rm.RoomCode = rv.Room " +
                     "join Oset as o on o.Room = rv.Room ");
         sql.append(sqlWhere);
@@ -805,7 +805,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectMax = "SELECT max(CODE) AS mCode FROM lab7_reservations";
+            String selectMax = "SELECT max(CODE) AS mCode FROM hrendon.lab7_reservations";
 
             conn.setAutoCommit(false);
 
@@ -926,7 +926,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectDate = "SELECT * FROM lab7_reservations WHERE Room = ? ";
+            String selectDate = "SELECT * FROM hrendon.lab7_reservations WHERE Room = ? ";
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(selectDate)) {

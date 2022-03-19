@@ -1,0 +1,12 @@
+Division of Responsibilities
+
+Humberto Rendon
+    Worked on creating the BasicQuery, the menu and FR1 and FR6. Tested to make sure that FR1 and FR6 worked as correctly
+    as possible.
+
+Ryan Tsai
+    - FR2!
+    - minor BasicQuery adjustments
+    - Bug hunter
+
+Skyler Dee
