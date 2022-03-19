@@ -1,5 +1,3 @@
 export HP_JDBC_URL=jdbc:mysql://db.labthreesixfive.com/hrendon?autoReconnect=true&useSSL=false;
 export HP_JDBC_USER=hrendon;
-export HP_JDBC_PW=CSC365-W22_028003371
-
-HP_JDBC_URL=jdbc:mysql://db.labthreesixfive.com/hrendon?autoReconnect=true&useSSL=false;HP_JDBC_USER=hrendon;HP_JDBC_PW=CSC365-W22_028003371
+export HP_JDBfC_PW=CSC365-W22_028003371
