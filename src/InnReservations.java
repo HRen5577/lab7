@@ -392,9 +392,9 @@ public class InnReservations {
                     "),popTable AS (\n" +
                     "    SELECT Room, IF(CheckIn IS NULL, CURRENT_DATE(), CheckIn) AS ChIn, IF(CheckOut IS NULL, CURRENT_DATE(), CheckOut) AS ChOut\n" +
                     "    FROM lab7_reservations LEFT OUTER JOIN lab7_rooms ON roomCode = Room JOIN  popDay\n" +
-                    "    WHERE CheckIn >= DayAgo OR ( DayAgo BETWEEN CheckIn AND CheckOut )\n" +
+                    "    WHERE (CheckIn >= DayAgo AND Checkout < CURRENT_DATE()) OR ( DayAgo BETWEEN CheckIn AND CheckOut )\n" +
                     "), donePopTable AS (\n" +
-                    "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), GREATEST(ChIn,DayAgo)))/180 as PopScore, IF(SUBDATE(MAX(ChOut), INTERVAL 1 DAY) < CURRENT_Date(), CURRENT_DATE(), SUBDATE(MAX(ChOut), INTERVAL 1 DAY)) AS NextCheckIn FROM popTable JOIN popDay\n" +
+                    "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), GREATEST(ChIn,DayAgo)))/180 as PopScore FROM popTable JOIN popDay\n" +
                     "    GROUP BY Room\n" +
                     "    ORDER BY PopScore DESC\n" +
                     "), doneMaxTable AS(\n" +
@@ -402,8 +402,12 @@ public class InnReservations {
                     "    JOIN lab7_reservations ON maxDays.Room = lab7_reservations.Room \n" +
                     "    WHERE maxD = DATEDIFF(Checkout, CheckIn) AND maxC = CheckOut \n" +
                     "    GROUP BY maxDays.Room,maxD, maxC, CheckIn, CheckOut\n" +
+                    "), TotalMaxCheckOut AS (\n" +
+                    "    SELECT RoomCode AS RC, MAX(Checkout) AS TMaxCheckout FROM lab7_rooms LEFT OUTER JOIN lab7_reservations ON Room = RoomCode\n" +
+                    "    GROUP BY RoomCode\n" +
                     ")\n" +
-                    "SELECT IF(PopScore IS null,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut ,IF(NextCheckIn is NULL,CURRENT_Date() , NextCheckIn) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN lab7_rooms ON RoomCode = donePopTable.Room\n" +
+                    "SELECT IF(PopScore IS null OR PopScore < 0,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut, IF(DATEDIFF(TMaxCheckout, CURRENT_DATE) <= 0 OR TMaxCheckout IS null,CURRENT_DATE,TMaxCheckout) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN lab7_rooms ON RoomCode = donePopTable.Room\n" +
+                    "    JOIN TotalMaxCheckOut ON RC = RoomCode\n" +
                     "ORDER BY PopScore DESC";
 
                 conn.setAutoCommit(false);
@@ -513,7 +517,7 @@ public class InnReservations {
 
             for(String roomC: roomCodes) {
                 String sql = "SELECT Room, MONTH(YearDate) as Month, sum(Rate) AS TotalRevenue FROM yearTable JOIN lab7_reservations\n" +
-                        "WHERE DATEDIFF(YearDate, CheckIn) >= 0 AND DATEDIFF(YearDate, CheckOut) <= 0 AND Room = ? \n" +
+                        "WHERE DATEDIFF(YearDate, CheckIn) >= 0 AND DATEDIFF(YearDate, CheckOut) < 0 AND Room = ? \n" +
                         "GROUP BY Room, MONTH(YearDate)\n" +
                         "ORDER BY Room, MONTH(YearDate)";
 
