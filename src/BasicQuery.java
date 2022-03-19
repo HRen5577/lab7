@@ -238,7 +238,7 @@ public class BasicQuery {
         roomCode = code;
     }
     public void setBedType(){
-        System.out.print("Enter Bed Type (Leave empty or type 'Any' for any bed): ");
+        System.out.print("Enter Bed Type \n(King Queen Double)\n(Leave empty or type 'Any' for any bed): ");
         bedType = selectBedType();
     }
     public void setCheckIn(){

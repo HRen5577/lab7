@@ -573,6 +573,9 @@ public class InnReservations {
         StringBuilder where = new StringBuilder();
         Integer totalOcc = bQuery.getNumAdults() + bQuery.getNumChildren();
         where.append("where maxOcc >= " + totalOcc);
+        if(!bQuery.getBedType().equalsIgnoreCase("")) {
+            where.append(" and BedType = '" + bQuery.getBedType() + "'");
+        }
 
         return where;
     }
@@ -581,7 +584,7 @@ public class InnReservations {
     private BasicQuery createFiveReservation(BasicQuery bQuery){
         Integer count = 1;
         System.out.println("---------------------------------------------");
-        System.out.println("Select option one(1) to five(5)");
+        System.out.println("Select preferences from 1 to -");
         System.out.println("---------------------------------------------");
 
         StringBuilder sqlWhere = createWhereStringFR2(bQuery);
