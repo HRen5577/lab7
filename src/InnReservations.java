@@ -399,7 +399,7 @@ public class InnReservations {
                     "    SELECT SUBDATE( CURRENT_DATE(), INTERVAL 180 DAY) AS DayAgo \n" +
                     "),popTable AS (\n" +
                     "    SELECT Room, IF(CheckIn IS NULL, CURRENT_DATE(), CheckIn) AS ChIn, IF(CheckOut IS NULL, CURRENT_DATE(), CheckOut) AS ChOut\n" +
-                    "    FROM hrendon.lab7_reservations LEFT OUTER JOIN lab7_rooms ON roomCode = Room JOIN  popDay\n" +
+                    "    FROM hrendon.lab7_reservations LEFT OUTER JOIN hrendon.lab7_rooms ON roomCode = Room JOIN  popDay\n" +
                     "    WHERE (CheckIn >= DayAgo AND Checkout < CURRENT_DATE()) OR ( DayAgo BETWEEN CheckIn AND CheckOut )\n" +
                     "), donePopTable AS (\n" +
                     "    SELECT Room, SUM(DATEDIFF(LEAST(CURRENT_DATE(), ChOut ), GREATEST(ChIn,DayAgo)))/180 as PopScore FROM popTable JOIN popDay\n" +
@@ -411,10 +411,10 @@ public class InnReservations {
                     "    WHERE maxD = DATEDIFF(Checkout, CheckIn) AND maxC = CheckOut \n" +
                     "    GROUP BY maxDays.Room,maxD, maxC, CheckIn, CheckOut\n" +
                     "), TotalMaxCheckOut AS (\n" +
-                    "    SELECT RoomCode AS RC, MAX(Checkout) AS TMaxCheckout FROM lab7_rooms LEFT OUTER JOIN hrendon.lab7_reservations ON Room = RoomCode\n" +
+                    "    SELECT RoomCode AS RC, MAX(Checkout) AS TMaxCheckout FROM hrendon.lab7_rooms LEFT OUTER JOIN hrendon.lab7_reservations ON Room = RoomCode\n" +
                     "    GROUP BY RoomCode\n" +
                     ")\n" +
-                    "SELECT IF(PopScore IS null OR PopScore < 0,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut, IF(DATEDIFF(TMaxCheckout, CURRENT_DATE) <= 0 OR TMaxCheckout IS null,CURRENT_DATE,TMaxCheckout) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN lab7_rooms ON RoomCode = donePopTable.Room\n" +
+                    "SELECT IF(PopScore IS null OR PopScore < 0,0,PopScore) AS PopScore, IF(maxD IS null,0,maxD) AS maxD, RoomCode,RoomName,Beds, bedType, maxOcc, basePrice, decor, IF(CheckOut IS null,'No Last CheckOut', CheckOut) AS CheckOut, IF(DATEDIFF(TMaxCheckout, CURRENT_DATE) <= 0 OR TMaxCheckout IS null,CURRENT_DATE,TMaxCheckout) AS NextCheckIn FROM donePopTable LEFT OUTER JOIN doneMaxTable ON doneMaxTable.Room = donePopTable.Room RIGHT OUTER JOIN hrendon.lab7_rooms ON RoomCode = donePopTable.Room\n" +
                     "    JOIN TotalMaxCheckOut ON RC = RoomCode\n" +
                     "ORDER BY PopScore DESC";
 
@@ -603,7 +603,7 @@ public class InnReservations {
         sql.append("', 'Occupied', 'Empty') as occupied from hrendon.lab7_reservations as rv) ");
         sql.append("select rv.Room, rm.RoomName, rm.Beds, rm.maxOcc, rm.basePrice, rm.decor " +
                     "from hrendon.lab7_reservations as rv " + 
-                    "join lab7_rooms as rm on rm.RoomCode = rv.Room " +
+                    "join hrendon.lab7_rooms as rm on rm.RoomCode = rv.Room " +
                     "join Oset as o on o.Room = rv.Room ");
         sql.append(sqlWhere);
         sql.append(" group by rv.Room having max(Occupied) = 'Empty' order by rv.Room limit 5;");
@@ -839,7 +839,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String selectRate = "SELECT * FROM lab7_rooms WHERE RoomCode = ?";
+            String selectRate = "SELECT * FROM hrendon.lab7_rooms WHERE RoomCode = ?";
 
             conn.setAutoCommit(false);
 
@@ -910,7 +910,7 @@ public class InnReservations {
                     conn.rollback();
                 }
 
-                } catch (SQLException e) {
+            } catch (SQLException e) {
                 e.getStackTrace();
                 conn.rollback();
             }
@@ -995,7 +995,7 @@ public class InnReservations {
                 System.getenv("HP_JDBC_USER"),
                 System.getenv("HP_JDBC_PW"))) {
 
-            String sql = "SELECT RoomCode FROM lab7_rooms";
+            String sql = "SELECT RoomCode FROM hrendon.lab7_rooms";
 
             conn.setAutoCommit(false);
 
