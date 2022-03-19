@@ -324,6 +324,12 @@ public class InnReservations {
                 return;
             }
 
+            boolean ret =  checkDateConflict(bQuery);
+
+            if(!ret){
+                return;
+            }
+
             String totalString = updateSql + setString + "WHERE CODE = ?";
             conn.setAutoCommit(false);
 
@@ -378,6 +384,90 @@ public class InnReservations {
         catch (SQLException e){
             e.getStackTrace();
         }
+        return false;
+    }
+
+    private boolean checkDateConflict(BasicQuery bQuery){
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                System.getenv("HP_JDBC_USER"),
+                System.getenv("HP_JDBC_PW"))) {
+            conn.setAutoCommit(false);
+
+            String totalString = "SELECT * FROM hrendon.lab7_reservations WHERE CODE = ?";
+
+            try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
+                pstmt.setObject(1, bQuery.getReservationCode());
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    conn.commit();
+
+                    if(rs.next()){
+                        String Room = rs.getString("Room");
+                        Date checkOut = rs.getDate("CheckOut");
+                        Date checkIn = rs.getDate("CheckIn");
+
+                        return checkSelect(bQuery, Room, checkOut, checkIn);
+
+                    }
+                    else{
+                        return false;
+                    }
+                } catch (SQLException e) {
+                    conn.rollback();
+                    e.getStackTrace();
+                }
+
+            } catch (SQLException e) {
+                e.getStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.getStackTrace();
+        }
+
+        return false;
+
+    }
+
+    private boolean checkSelect(BasicQuery bQuery, String Room, Date checkOut, Date checkIn) {
+        Date cO = checkOut;
+        Date cI = checkIn;
+
+        if (bQuery.getCheckOut().compareTo(BasicQuery.EMPTY_DATE) != 0) {
+            cO = bQuery.getCheckOut();
+        }
+
+        if (bQuery.getCheckIn().compareTo(BasicQuery.EMPTY_DATE) != 0) {
+            cI = bQuery.getCheckIn();
+        }
+
+        try (Connection conn = DriverManager.getConnection(System.getenv("HP_JDBC_URL"),
+                System.getenv("HP_JDBC_USER"),
+                System.getenv("HP_JDBC_PW"))) {
+            conn.setAutoCommit(false);
+
+            String totalString = "SELECT * FROM hrendon.lab7_reservations" +
+                        "WHERE DATEDIFF(?,CheckIn) >= 0 AND DATEDIFF(?, Checkout) < 0 AND Room = ?"+
+                    "AND CODE != ?";
+
+            try (PreparedStatement pstmt = conn.prepareStatement(totalString)) {
+                pstmt.setDate(1,cI);
+                pstmt.setDate(2,cO);
+                pstmt.setString(3,Room);
+                pstmt.setInt(4,bQuery.getReservationCode());
+
+                boolean rs = pstmt.execute();
+
+                conn.commit();
+
+                return !rs;
+            } catch (SQLException e) {
+                e.getStackTrace();
+            }
+        } catch (SQLException e) {
+            e.getStackTrace();
+        }
+
         return false;
     }
 
