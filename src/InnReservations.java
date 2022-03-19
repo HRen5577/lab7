@@ -405,8 +405,7 @@ public class InnReservations {
                         String Room = rs.getString("Room");
                         Date checkOut = rs.getDate("CheckOut");
                         Date checkIn = rs.getDate("CheckIn");
-                        System.out.println(Room + checkOut + checkIn);
-
+                        
                         return checkSelect(bQuery, Room, checkOut, checkIn);
 
                     }
@@ -460,7 +459,6 @@ public class InnReservations {
                 
                 
                 try (ResultSet rs = pstmt.executeQuery()){
-                    System.out.println(rs);
                     if (rs.next()) {
                         return false;
                     }
