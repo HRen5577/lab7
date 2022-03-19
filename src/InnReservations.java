@@ -862,31 +862,19 @@ public class InnReservations {
         int totalWeeks = totalDays / 7;
 
         int weekdays = totalDays;
-        int weekends = totalWeeks*2;
+        int weekends = 0;
 
         String startDay = getDay(start);
         String endDay = getDay(end);
 
-        if(startDay.equals("Saturday")){
-            weekends += 2;
-        }
-        else if(startDay.equals("Sunday")){
-            weekends += 1;
-        }
 
-        if(endDay.equals("Saturday")){
+        if((startDay.equalsIgnoreCase("Sunday") || startDay.equalsIgnoreCase("Saturday")) && (endDay.equalsIgnoreCase("Sunday") || endDay.equalsIgnoreCase("Saturday")) ){
             weekends += 1;
-        }
-        else if(endDay.equals("Sunday")){
-            weekends += 2;
         }
 
         weekends = weekends + (totalWeeks*2);
         weekdays = weekdays - (weekends);
 
-        System.out.println(weekends);
-        System.out.println(weekdays);
-        System.out.println(totalDays);
         return (float) ((baseRate * weekdays) + ((baseRate*.10) + baseRate)*weekends);
     }
 

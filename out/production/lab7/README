@@ -1,9 +1,23 @@
-Onboarding:
-1. create auth.env file in src ( make sure permissions are granted to db )
-    contains:
-        export HP_JDBC_URL="jdbc:mysql://db.labthreesixfive.com/<dbSourceUsername>?autoReconnect=true&useSSL=false";
-        export HP_JDBC_USER=<yourUsername>;
-        export HP_JDBC_PW=<yourPassword>;
-2. in shell run -> source auth.env
-3. in shell run -> javac *.java
-4. in shell run -> java -cp mysql-connector-java-8.0.16.jar:. InnReservations
+A) Team Members
+    Ryan Tsaii, Skyler Dee, Humberto Rendon
+
+B)
+    Environmental Variables Needed
+        export HP_JDBC_URL="jdbc:mysql://db.labthreesixfive.com/hrendon?autoReconnect=true&useSSL=false";
+        export HP_JDBC_USER=hrendon;
+        export HP_JDBC_PW=CSC365-W22_028003371;
+
+    Onboarding:
+        1. create auth.jdbc file in src ( make sure permissions are granted to db and have mysql-connector-java-8.0.16.jar )
+            contains:
+                export HP_JDBC_URL="jdbc:mysql://db.labthreesixfive.com/<dbSourceUsername>?autoReconnect=true&useSSL=false";
+                export HP_JDBC_USER=<yourUsername>;
+                export HP_JDBC_PW=<yourPassword>;
+        2. in shell run -> source auth.jdbc
+        3. in shell run -> javac *.java
+        4. in shell run -> java -cp mysql-connector-java-8.0.16.jar:. InnReservations
+
+
+C) Known Bugs/Deficiencies
+    FR1) NextCheckIn gives the max checkout and does not account for gaps in reservations
+
